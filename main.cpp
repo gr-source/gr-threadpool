@@ -1,6 +1,7 @@
 #include <iostream>
 #include <mutex>
 
+#include "taskmanager.hpp"
 #include "threadpool.hpp"
 
 static std::mutex mutex;
@@ -19,17 +20,45 @@ static void print(int id)
     std::cout << "SUM: "<< sum << std::endl;
 }
 
+class ExampleTask : public AsyncTask
+{
+public:
+    ExampleTask(int id) : id(id)
+    {
+        // std::lock_guard<std::mutex> lock(mutex);
+        std::cout << "ExampleTask: Init" << std::endl;
+    }
+
+    ~ExampleTask()
+    {
+        // std::lock_guard<std::mutex> lock(mutex);
+        // std::cout << "ExampleTask: Shut" << std::endl;
+    }
+
+    // Assegure que os dados compartilhados estejam na safe thread, std::cout não é seguro
+    void doInBackground() override
+    {
+        {
+            std::lock_guard<std::mutex> lock(mutex);
+            sum += id;
+
+            std::cout << "ExampleTask: " << sum << std::endl;
+        }  
+    }
+
+private:
+    int id;
+};
+
 int main(int, char**)
 {
-    ThreadPool::Initialize();
-
+    for (int i=0;i<1000;++i)
+        TaskManager::Add<ExampleTask>(i);
+    
+    /* resultado deve ser: 499500
     for (int i=0;i<1000;++i)
     {
         ThreadPool::AddTask(&print, i);
     }
-
-    std::string ch;
-    std::cin >> ch;
-
-    ThreadPool::Shutdown();
+    */
 }
