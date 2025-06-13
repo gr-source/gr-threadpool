@@ -33,10 +33,11 @@ private:
 };
 
 template <typename... Args>
-inline void ThreadPool::AddTask(Args &&...args) {
+inline void ThreadPool::AddTask(Args &&...args)
+{
     {
         std::lock_guard<std::mutex> lock(m_mutex);
         m_task.emplace_back(std::bind(std::forward<Args>(args)...));
     }
-    m_cv.notify_all();
+    m_cv.notify_one();
 }

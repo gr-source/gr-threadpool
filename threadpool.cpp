@@ -1,4 +1,5 @@
 #include "threadpool.hpp"
+#include <iostream>
 
 std::list<std::function<void()>> ThreadPool::m_task;
 
@@ -10,23 +11,29 @@ std::mutex ThreadPool::m_mutex;
 
 bool ThreadPool::m_bStop = false;
 
-void ThreadPool::Initialize(std::uint32_t maxThread) {
-    for (std::uint32_t i=0;i<maxThread;i++) {
+void ThreadPool::Initialize(std::uint32_t maxThread)
+{
+    for (std::uint32_t i=0;i<maxThread;i++)
+    {
         m_threads.emplace_back(&ThreadPool::Update);
     }
 }
 
-void ThreadPool::Shutdown() {
+void ThreadPool::Shutdown()
+{
     Stop();
 
-    for (auto &thread : m_threads) {
-        if (thread.joinable()) {
+    for (auto &thread : m_threads)
+    {
+        if (thread.joinable())
+        {
             thread.join();
         }
     }
 }
 
-void ThreadPool::Stop() {
+void ThreadPool::Stop()
+{
     {
         std::lock_guard<std::mutex> lock(m_mutex);
         m_bStop = true;
@@ -34,21 +41,32 @@ void ThreadPool::Stop() {
     m_cv.notify_all();
 }
 
-void ThreadPool::Update() {
-    while (true) {
+void ThreadPool::Update()
+{
+    while (true)
+    {
         std::unique_lock<std::mutex> lock(m_mutex);
         m_cv.wait(lock, [] {
             return m_bStop || !m_task.empty();
         });
 
-        if (m_bStop) {
+        if (m_bStop)
+        {
             break;
         }
 
-        auto task = m_task.front();
-        m_task.pop_front();
+        auto temp = std::move(m_task);
         lock.unlock();
 
-        task();
+        try
+        {
+            for (auto &task : temp)
+                task();
+        } catch (const std::exception &e)
+        {
+            std::cerr << "ThreadPool: " << e.what() << std::endl;
+        }
+
+        lock.lock();
     }
 }
