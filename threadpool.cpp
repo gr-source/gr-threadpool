@@ -19,7 +19,7 @@ ThreadPool::~ThreadPool()
 {
     {
         std::unique_lock<std::mutex> lock(m_mutex);
-        m_cv.wait(lock, [&] { return m_available == 0; });
+        m_cv.wait(lock, [&] { return m_available == 0 && m_task.empty(); });
     }
 
     {

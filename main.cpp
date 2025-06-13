@@ -1,5 +1,7 @@
+#include <chrono>
 #include <iostream>
 #include <mutex>
+#include <thread>
 
 #include "taskmanager.hpp"
 #include "threadpool.hpp"
@@ -31,13 +33,15 @@ public:
 
     ~ExampleTask()
     {
-        // std::lock_guard<std::mutex> lock(mutex);
+        std::lock_guard<std::mutex> lock(mutex);
         // std::cout << "ExampleTask: Shut" << std::endl;
     }
 
     // Assegure que os dados compartilhados estejam na safe thread, std::cout não é seguro
     void doInBackground() override
     {
+        std::this_thread::sleep_for(std::chrono::microseconds(500));
+
         {
             std::lock_guard<std::mutex> lock(mutex);
             sum += id;
@@ -55,10 +59,13 @@ int main(int, char**)
     for (int i=0;i<1000;++i)
         TaskManager::Add<ExampleTask>(i);
     
-    /* resultado deve ser: 499500
+    /* resultado deve ser: 499500 */
     for (int i=0;i<1000;++i)
     {
         ThreadPool::AddTask(&print, i);
     }
-    */
+    // */
+    //
+    // char c;
+    // std::cin >> c;
 }
