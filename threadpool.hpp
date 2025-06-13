@@ -14,6 +14,8 @@ public:
     template <typename ...Args>
     static void AddTask(Args &&...args);
 
+    static bool IsMainThread();
+
 private:
     static ThreadPool s_ThreadPool;
 
@@ -29,8 +31,12 @@ private:
 
     std::uint8_t m_available;
 
+    const std::thread::id m_mainThreadID;
+
     ThreadPool(std::uint32_t maxThread);
     ~ThreadPool();
+
+    bool isMainThread() const;
 
     template <typename ...Args>
     void add(Args &&...args);

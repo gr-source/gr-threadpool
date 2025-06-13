@@ -1,13 +1,20 @@
 #include "threadpool.hpp"
 #include <iostream>
 #include <mutex>
+#include <thread>
 
 ThreadPool ThreadPool::s_ThreadPool(std::thread::hardware_concurrency());
 
 std::mutex ThreadPool::m_mutex;
 
+// static
+bool ThreadPool::IsMainThread()
+{
+    return s_ThreadPool.isMainThread();
+}
+
 // private
-ThreadPool::ThreadPool(std::uint32_t maxThread) : m_bStop(false), m_available(0)
+ThreadPool::ThreadPool(std::uint32_t maxThread) : m_bStop(false), m_available(0), m_mainThreadID(std::this_thread::get_id())
 {
     for (std::uint32_t i=0;i<maxThread;i++)
     {
@@ -36,6 +43,11 @@ ThreadPool::~ThreadPool()
             thread.join();
         }
     }
+}
+
+bool ThreadPool::isMainThread() const
+{
+    return std::this_thread::get_id() == m_mainThreadID;
 }
 
 void ThreadPool::update()
